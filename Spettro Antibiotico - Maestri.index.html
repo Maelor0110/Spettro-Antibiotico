@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guida allo Spettro Antibiotico - Dott. Maestri</title>
+    <style>
+        /* --- Reset e Stili Globali --- */
+        :root {
+            --primary-bg: #f8f9fa;
+            --secondary-bg: #ffffff;
+            --border-color: #dee2e6;
+            --text-color: #212529;
+            --accent-color: #007bff;
+            --hover-bg: #e9ecef;
+            --active-bg: #dbe9ff;
+            --explanation-bg: #e2f3ff;
+            --explanation-border: #b6e0ff;
+            
+            --covered-bg: #d4edda; --covered-text: #155724;
+            --not-covered-bg: #f8d7da; --not-covered-text: #721c24;
+            --variable-bg: #fff3cd; --variable-text: #856404;
+        }
+
+        html { height: 100%; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+        }
+
+        /* --- Layout Principale --- */
+        .container {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        header {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 15px 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { margin: 0; font-size: 1.8em; }
+        
+        #summary-toggle-btn {
+            padding: 8px 16px; font-size: 0.9em; background-color: white;
+            color: var(--accent-color); border: 1px solid white; border-radius: 20px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        #summary-toggle-btn:hover { background-color: #f0f0f0; }
+
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        /* --- Sidebar --- */
+        #sidebar {
+            flex: 0 0 320px; background-color: var(--secondary-bg);
+            border-right: 1px solid var(--border-color); overflow-y: auto;
+            padding-bottom: 20px; transition: flex-basis 0.3s ease-in-out, opacity 0.3s;
+        }
+        .sidebar-hidden #sidebar { flex-basis: 0; opacity: 0; overflow: hidden; border-right: none; }
+        .antibiotic-class h2 {
+            font-size: 1.1em; padding: 12px 15px; margin: 0; cursor: pointer;
+            border-bottom: 1px solid var(--border-color); background-color: #f1f3f5;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .antibiotic-class h2 .toggle-icon::before { content: '▶'; font-size: 0.7em; transition: transform 0.2s; }
+        .antibiotic-class.open h2 .toggle-icon::before { transform: rotate(90deg); }
+        .antibiotic-list { list-style: none; padding: 0; margin: 0; max-height: 0; overflow: hidden; transition: max-height 0.3s; }
+        .antibiotic-class.open .antibiotic-list { max-height: 1000px; }
+        .antibiotic-item {
+            padding: 10px 15px 10px 30px; cursor: pointer;
+            border-bottom: 1px solid var(--border-color); transition: background-color 0.2s;
+        }
+        .antibiotic-item:hover { background-color: var(--hover-bg); }
+        .antibiotic-item.active { background-color: var(--active-bg); font-weight: bold; color: var(--accent-color); }
+
+        /* --- Vista Principale --- */
+        #main-view { flex-grow: 1; padding: 25px; overflow-y: auto; }
+        .welcome-message { text-align: center; margin-top: 50px; color: #6c757d; }
+        .welcome-message h2 { font-size: 2em; }
+        #spectrum-details h2 {
+            margin-top: 0; color: var(--accent-color);
+            border-bottom: 2px solid var(--accent-color); padding-bottom: 10px;
+        }
+        #spectrum-details .notes {
+            background-color: #eef; padding: 15px; border-radius: 5px;
+            margin: 20px 0; border-left: 5px solid var(--accent-color);
+        }
+
+        /* --- Box e Tabelle --- */
+        .disclaimer, .explanation-box {
+            margin: 20px 0; padding: 15px; border-radius: 5px; font-size: 0.9em;
+        }
+        .disclaimer { background-color: var(--variable-bg); color: var(--variable-text); border: 1px solid #ffeeba; }
+        .explanation-box { background-color: var(--explanation-bg); border: 1px solid var(--explanation-border); }
+        .explanation-box h4 { margin-top: 0; }
+        .explanation-box ul { padding-left: 20px; margin: 0; }
+        .disclaimer-header { font-weight: bold; }
+
+        #spectrum-table, #summary-table { width: 100%; border-collapse: collapse; }
+        #spectrum-table th, #spectrum-table td { border: 1px solid var(--border-color); padding: 12px; text-align: left; }
+        #spectrum-table th { background-color: #f1f3f5; }
+        #spectrum-table tr:nth-child(even) { background-color: var(--primary-bg); }
+        .coverage-cell { font-weight: bold; text-align: center !important; }
+
+        .covered { background-color: var(--covered-bg); color: var(--covered-text); }
+        .not-covered { background-color: var(--not-covered-bg); color: var(--not-covered-text); }
+        .variable { background-color: var(--variable-bg); color: var(--variable-text); }
+
+        /* --- Tabella Riassuntiva --- */
+        #summary-container { overflow-x: auto; }
+        #summary-table { white-space: nowrap; }
+        #summary-table th, #summary-table td { border: 1px solid var(--border-color); padding: 8px; text-align: center; vertical-align: middle; }
+        #summary-table th.bacterium-header { writing-mode: vertical-lr; transform: rotate(180deg); padding-bottom: 10px; font-size: 0.9em; }
+        #summary-table .class-header-row td, #summary-table .antibiotic-name-cell {
+            text-align: left; position: sticky; left: 0; background-color: var(--secondary-bg); z-index: 1;
+        }
+        #summary-table .class-header-row td { background-color: #e9ecef; font-weight: bold; padding: 10px; }
+        .antibiotic-summary-link { color: var(--accent-color); text-decoration: underline; cursor: pointer; }
+        
+        /* --- Footer --- */
+        #app-footer {
+            background-color: #343a40; color: #f8f9fa;
+            padding: 20px; text-align: center; font-size: 0.9em;
+        }
+        #app-footer details {
+            margin-top: 15px; border: 1px solid #495057; border-radius: 5px;
+            padding: 10px; max-width: 800px; margin-left: auto; margin-right: auto;
+        }
+        #app-footer summary { cursor: pointer; font-weight: bold; }
+        #app-footer ul { list-style: none; padding: 0; margin-top: 10px; text-align: left; }
+        #app-footer li { margin-bottom: 5px; }
+        #app-footer a { color: #90caff; }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            .main-content { flex-direction: column; }
+            #sidebar { flex: 0 0 auto; height: 40vh; border-right: none; border-bottom: 1px solid var(--border-color); }
+            .sidebar-hidden #sidebar { height: 0; border-bottom: none; }
+            header { flex-direction: column; gap: 10px; padding: 10px; text-align: center; }
+            header h1 { font-size: 1.4em; }
+            .welcome-message { margin-top: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Guida Rapida allo Spettro Antibiotico</h1>
+            <button id="summary-toggle-btn">Mostra Riepilogo Generale</button>
+        </header>
+        <div class="main-content">
+            <aside id="sidebar"></aside>
+            <main id="main-view"></main>
+        </div>
+    </div>
+    <footer id="app-footer">
+        <p>WebApp creata da <strong>Dott. Maestri Lorenzo</strong></p>
+        <details>
+            <summary>Fonti e Riferimenti Bibliografici</summary>
+            <ul>
+                <li>The Sanford Guide to Antimicrobial Therapy</li>
+                <li>Mandell, Douglas, and Bennett's Principles and Practice of Infectious Diseases</li>
+                <li>UpToDate® - Infectious Diseases</li>
+                <li>Linee guida nazionali e internazionali (es. IDSA - Infectious Diseases Society of America)</li>
+            </ul>
+        </details>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+        // --- DATABASE DEGLI ANTIBIOTICI E BATTERI ---
+        const allBacteria = [
+            "Staphylococcus aureus (MSSA)", "Staphylococcus aureus (MRSA)",
+            "Streptococchi (es. S. pyogenes, S. pneumoniae)", "Enterococchi",
+            "E. coli / Klebsiella spp.", "Pseudomonas aeruginosa", "Haemophilus influenzae",
+            "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)",
+            "Clostridioides difficile", "Altri Anaerobi (es. Bacteroides)"
+        ];
+        
+        const antibioticData = [
+            { class: "Penicilline", antibiotics: [
+                { name: "Penicillina G / V", notes: "Spettro ristretto. Inattivata da beta-lattamasi.", coverage: { "Staphylococcus aureus (MSSA)": 0, "Staphylococcus aureus (MRSA)": 0, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 1, "Enterococchi": 0.5, "E. coli / Klebsiella spp.": 0, "Pseudomonas aeruginosa": 0, "Haemophilus influenzae": 0, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 0, "Clostridioides difficile": 0, "Altri Anaerobi (es. Bacteroides)": 0.5 }},
+                { name: "Oxacillina / Nafcillina", notes: "Penicilline anti-stafilococciche. Farmaco di scelta per MSSA. Inattive su MRSA ed enterococchi.", coverage: { "Staphylococcus aureus (MSSA)": 1, "Staphylococcus aureus (MRSA)": 0, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 1, "Enterococchi": 0, "E. coli / Klebsiella spp.": 0, "Pseudomonas aeruginosa": 0, "Haemophilus influenzae": 0, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 0, "Clostridioides difficile": 0, "Altri Anaerobi (es. Bacteroides)": 0.5 }},
+                { name: "Amoxicillina", notes: "Aminopenicillina. Spettro più ampio della Penicillina G ma sensibile alle beta-lattamasi.", coverage: { "Staphylococcus aureus (MSSA)": 0, "Staphylococcus aureus (MRSA)": 0, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 1, "Enterococchi": 1, "E. coli / Klebsiella spp.": 0.5, "Pseudomonas aeruginosa": 0, "Haemophilus influenzae": 1, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 0, "Clostridioides difficile": 0, "Altri Anaerobi (es. Bacteroides)": 0.5 }},
+                { name: "Amoxicillina/Clavulanato", notes: "L'inibitore estende la copertura a MSSA, Gram- e anaerobi. Frequente causa di colite da C. difficile.", coverage: { "Staphylococcus aureus (MSSA)": 1, "Staphylococcus aureus (MRSA)": 0, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 1, "Enterococchi": 1, "E. coli / Klebsiella spp.": 1, "Pseudomonas aeruginosa": 0, "Haemophilus influenzae": 1, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 0, "Clostridioides difficile": 0, "Altri Anaerobi (es. Bacteroides)": 1 }},
+                { name: "Piperacillina/Tazobactam", notes: "Spettro molto ampio con inibitore. Copertura eccellente su Gram+, Gram- (inclusa Pseudomonas) e anaerobi.", coverage: { "Staphylococcus aureus (MSSA)": 1, "Staphylococcus aureus (MRSA)": 0, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 1, "Enterococchi": 1, "E. coli / Klebsiella spp.": 1, "Pseudomonas aeruginosa": 1, "Haemophilus influenzae": 1, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 0, "Clostridioides difficile": 0, "Altri Anaerobi (es. Bacteroides)": 1 }}
+            ]},
+            { class: "Cefalosporine", antibiotics: [
+                { name: "Cefazolina (I gen)", notes: "Ottima attività su Gram+ (Streptococchi, MSSA). Scarsa su Gram-.", coverage: { "Staphylococcus aureus (MSSA)": 1, "Staphylococcus aureus (MRSA)": 0, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 1, "Enterococchi": 0, "E. coli / Klebsiella spp.": 0.5, "Pseudomonas aeruginosa": 0, "Haemophilus influenzae": 0, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 0, "Clostridioides difficile": 0, "Altri Anaerobi (es. Bacteroides)": 0 }},
+                { name: "Ceftriaxone (III gen)", notes: "Ampio spettro su Gram- (non Pseudomonas) e Streptococchi. Associata a rischio di C. difficile.", coverage: { "Staphylococcus aureus (MSSA)": 0.5, "Staphylococcus aureus (MRSA)": 0, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 1, "Enterococchi": 0, "E. coli / Klebsiella spp.": 1, "Pseudomonas aeruginosa": 0, "Haemophilus influenzae": 1, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 0, "Clostridioides difficile": 0, "Altri Anaerobi (es. Bacteroides)": 0.5 }},
+                { name: "Cefepime (IV gen)", notes: "Ampio spettro, copre Gram+ e Gram- inclusa Pseudomonas. Scarsa attività anaerobica.", coverage: { "Staphylococcus aureus (MSSA)": 1, "Staphylococcus aureus (MRSA)": 0, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 1, "Enterococchi": 0, "E. coli / Klebsiella spp.": 1, "Pseudomonas aeruginosa": 1, "Haemophilus influenzae": 1, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 0, "Clostridioides difficile": 0, "Altri Anaerobi (es. Bacteroides)": 0 }},
+                { name: "Ceftaroline (V gen)", notes: "Unica cefalosporina con attività contro MRSA. Non copre Pseudomonas.", coverage: { "Staphylococcus aureus (MSSA)": 1, "Staphylococcus aureus (MRSA)": 1, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 1, "Enterococchi": 0, "E. coli / Klebsiella spp.": 1, "Pseudomonas aeruginosa": 0, "Haemophilus influenzae": 1, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 0, "Clostridioides difficile": 0, "Altri Anaerobi (es. Bacteroides)": 0 }}
+            ]},
+            { class: "Carbapenemi", antibiotics: [
+                { name: "Meropenem / Imipenem", notes: "Spettro molto ampio (Gram+, Gram-, anaerobi). Riservati per infezioni gravi. Rischio di C. difficile.", coverage: { "Staphylococcus aureus (MSSA)": 1, "Staphylococcus aureus (MRSA)": 0, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 1, "Enterococchi": 1, "E. coli / Klebsiella spp.": 1, "Pseudomonas aeruginosa": 1, "Haemophilus influenzae": 1, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 0, "Clostridioides difficile": 0, "Altri Anaerobi (es. Bacteroides)": 1 }},
+                { name: "Ertapenem", notes: "Spettro più ristretto: non copre Pseudomonas, Acinetobacter, Enterococchi.", coverage: { "Staphylococcus aureus (MSSA)": 1, "Staphylococcus aureus (MRSA)": 0, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 1, "Enterococchi": 0, "E. coli / Klebsiella spp.": 1, "Pseudomonas aeruginosa": 0, "Haemophilus influenzae": 1, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 0, "Clostridioides difficile": 0, "Altri Anaerobi (es. Bacteroides)": 1 }}
+            ]},
+            { class: "Fluorochinoloni", antibiotics: [
+                { name: "Levofloxacina", notes: "Chinolone 'respiratorio' con copertura di Gram+, Gram-, atipici e Pseudomonas. Alto rischio di C. difficile.", coverage: { "Staphylococcus aureus (MSSA)": 1, "Staphylococcus aureus (MRSA)": 0.5, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 1, "Enterococchi": 0, "E. coli / Klebsiella spp.": 1, "Pseudomonas aeruginosa": 1, "Haemophilus influenzae": 1, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 1, "Clostridioides difficile": 0, "Altri Anaerobi (es. Bacteroides)": 0 }}
+            ]},
+            { class: "Lincosamidi", antibiotics: [
+                { name: "Clindamicina", notes: "Eccellente su anaerobi e Gram+ (incluso MRSA-CA). Non copre Gram- aerobi ed Enterococchi. Storicamente associata al più alto rischio di colite da C. difficile.", coverage: { "Staphylococcus aureus (MSSA)": 1, "Staphylococcus aureus (MRSA)": 0.5, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 1, "Enterococchi": 0, "E. coli / Klebsiella spp.": 0, "Pseudomonas aeruginosa": 0, "Haemophilus influenzae": 0, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 0, "Clostridioides difficile": 0, "Altri Anaerobi (es. Bacteroides)": 1 }}
+            ]},
+            { class: "Glicopeptidi", antibiotics: [
+                { name: "Vancomicina (IV)", notes: "Standard of care per infezioni gravi da Gram+, inclusi MRSA. Nessuna attività su Gram-. Per C. difficile è necessaria la formulazione orale (non assorbita).", coverage: { "Staphylococcus aureus (MSSA)": 1, "Staphylococcus aureus (MRSA)": 1, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 1, "Enterococchi": 1, "E. coli / Klebsiella spp.": 0, "Pseudomonas aeruginosa": 0, "Haemophilus influenzae": 0, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 0, "Clostridioides difficile": 0, "Altri Anaerobi (es. Bacteroides)": 0.5 }}
+            ]},
+            { class: "Oxazolidinoni", antibiotics: [
+                { name: "Linezolid", notes: "Attività eccellente contro tutti i Gram+, inclusi MRSA e VRE (Enterococchi Resistenti alla Vancomicina). Nessuna attività su Gram-.", coverage: { "Staphylococcus aureus (MSSA)": 1, "Staphylococcus aureus (MRSA)": 1, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 1, "Enterococchi": 1, "E. coli / Klebsiella spp.": 0, "Pseudomonas aeruginosa": 0, "Haemophilus influenzae": 0, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 0, "Clostridioides difficile": 0.5, "Altri Anaerobi (es. Bacteroides)": 0.5 }}
+            ]},
+            { class: "Altri Farmaci", antibiotics: [
+                { name: "Doxiciclina", notes: "Ampio spettro, utile per atipici, zoonosi e MRSA della comunità.", coverage: { "Staphylococcus aureus (MSSA)": 1, "Staphylococcus aureus (MRSA)": 0.5, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 0.5, "Enterococchi": 0, "E. coli / Klebsiella spp.": 0, "Pseudomonas aeruginosa": 0, "Haemophilus influenzae": 1, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 1, "Clostridioides difficile": 0, "Altri Anaerobi (es. Bacteroides)": 0 }},
+                { name: "Cotrimossazolo (TMP-SMX)", notes: "Buona attività contro MRSA, patogeni urinari e opportunisti (Pneumocystis).", coverage: { "Staphylococcus aureus (MSSA)": 1, "Staphylococcus aureus (MRSA)": 1, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 0.5, "Enterococchi": 0, "E. coli / Klebsiella spp.": 1, "Pseudomonas aeruginosa": 0, "Haemophilus influenzae": 1, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 0, "Clostridioides difficile": 0, "Altri Anaerobi (es. Bacteroides)": 0 }},
+                { name: "Metronidazolo", notes: "Eccellente attività contro batteri anaerobi (incluso C. difficile) e protozoi. Nessuna attività su aerobi.", coverage: { "Staphylococcus aureus (MSSA)": 0, "Staphylococcus aureus (MRSA)": 0, "Streptococchi (es. S. pyogenes, S. pneumoniae)": 0, "Enterococchi": 0, "E. coli / Klebsiella spp.": 0, "Pseudomonas aeruginosa": 0, "Haemophilus influenzae": 0, "Batteri Atipici (Mycoplasma, Chlamydia, Legionella)": 0, "Clostridioides difficile": 1, "Altri Anaerobi (es. Bacteroides)": 1 }}
+            ]}
+        ];
+
+        // --- RIFERIMENTI DOM ---
+        const sidebar = document.getElementById('sidebar');
+        const mainView = document.getElementById('main-view');
+        const mainContent = document.querySelector('.main-content');
+        const summaryBtn = document.getElementById('summary-toggle-btn');
+        let isSummaryViewVisible = false;
+
+        // --- FUNZIONI DI UTILITY ---
+        const getExplanationHtml = () => `
+            <div class="explanation-box">
+                <h4>Spiegazione dei Termini</h4>
+                <ul>
+                    <li><strong style="color: ${getComputedStyle(document.documentElement).getPropertyValue('--covered-text')}">✅ Coperto:</strong> L'antibiotico è generalmente considerato efficace e rappresenta una valida opzione terapeutica.</li>
+                    <li><strong style="color: ${getComputedStyle(document.documentElement).getPropertyValue('--variable-text')}">⚠️ Variabile/Intermedio:</strong> L'efficacia può dipendere da resistenze locali/acquisite, da specie specifiche all'interno del gruppo o richiedere dosaggi particolari. Non è sempre una prima scelta.</li>
+                    <li><strong style="color: ${getComputedStyle(document.documentElement).getPropertyValue('--not-covered-text')}">❌ Non Coperto:</strong> L'antibiotico non ha attività clinicamente significativa contro questo gruppo di batteri (resistenza intrinseca o acquisita quasi universale).</li>
+                </ul>
+            </div>`;
+
+        const getDisclaimerHtml = () => `
+            <div class="disclaimer">
+                <p class="disclaimer-header">⚠️ ATTENZIONE: INFORMAZIONI A SCOPO EDUCATIVO</p>
+                <p>Questa web app è uno strumento di studio e consultazione rapida. Le informazioni non sostituiscono in alcun modo il giudizio clinico, le linee guida ufficiali, l'antibiogramma o la consultazione di un medico. Le resistenze batteriche variano geograficamente e nel tempo.</p>
+            </div>`;
+
+        // --- FUNZIONI DI RENDER ---
+        function renderSidebar() {
+            sidebar.innerHTML = antibioticData.map((abClass, classIndex) => `
+                <div class="antibiotic-class" data-class-index="${classIndex}">
+                    <h2>${abClass.class} <span class="toggle-icon"></span></h2>
+                    <ul class="antibiotic-list">${abClass.antibiotics.map((antibiotic, antibioticIndex) => `
+                        <li class="antibiotic-item" data-class-index="${classIndex}" data-antibiotic-index="${antibioticIndex}">
+                            ${antibiotic.name}
+                        </li>`).join('')}
+                    </ul>
+                </div>`).join('');
+        }
+
+        function showWelcomeMessage() {
+            mainView.innerHTML = `
+                <div class="welcome-message">
+                    <h2>Benvenuto!</h2>
+                    <p>Seleziona un antibiotico dalla lista o clicca su "Mostra Riepilogo Generale".</p>
+                    ${getDisclaimerHtml()}
+                </div>`;
+        }
+        
+        function renderSummaryTable() {
+            const tableHeader = `<tr><th>Antibiotico / Classe</th>${allBacteria.map(b => `<th class="bacterium-header">${b}</th>`).join('')}</tr>`;
+
+            const tableBody = antibioticData.map((abClass, classIndex) => 
+                `<tr class="class-header-row"><td colspan="${allBacteria.length + 1}">${abClass.class}</td></tr>` +
+                abClass.antibiotics.map((antibiotic, antibioticIndex) => {
+                    const cells = allBacteria.map(bacterium => {
+                        const coverageValue = antibiotic.coverage[bacterium];
+                        let coverageClass = '', coverageIcon = '';
+                        switch(coverageValue) {
+                            case 1: coverageClass = 'covered'; coverageIcon = '✅'; break;
+                            case 0.5: coverageClass = 'variable'; coverageIcon = '⚠️'; break;
+                            default: coverageClass = 'not-covered'; coverageIcon = '❌';
+                        }
+                        return `<td class="${coverageClass}">${coverageIcon}</td>`;
+                    }).join('');
+                    return `<tr><td class="antibiotic-name-cell"><span class="antibiotic-summary-link" data-class-index="${classIndex}" data-antibiotic-index="${antibioticIndex}">${antibiotic.name}</span></td>${cells}</tr>`;
+                }).join('')
+            ).join('');
+            
+            mainView.innerHTML = `
+                <h2>Riepilogo Generale dello Spettro Antibiotico</h2>
+                <p>Clicca sul nome di un antibiotico per vederne i dettagli. Scorri la tabella orizzontalmente.</p>
+                ${getExplanationHtml()}
+                <div id="summary-container">
+                    <table id="summary-table"><thead>${tableHeader}</thead><tbody>${tableBody}</tbody></table>
+                </div>
+                ${getDisclaimerHtml()}`;
+        }
+
+        function displaySpectrum(classIndex, antibioticIndex) {
+            const antibiotic = antibioticData[classIndex].antibiotics[antibioticIndex];
+            const tableRows = allBacteria.map(bacterium => {
+                const coverageValue = antibiotic.coverage[bacterium];
+                let coverageClass = '', coverageText = '';
+                switch(coverageValue) {
+                    case 1: coverageClass = 'covered'; coverageText = '✅ Coperto'; break;
+                    case 0.5: coverageClass = 'variable'; coverageText = '⚠️ Variabile/Intermedio'; break;
+                    default: coverageClass = 'not-covered'; coverageText = '❌ Non Coperto';
+                }
+                return `<tr><td>${bacterium}</td><td class="coverage-cell ${coverageClass}">${coverageText}</td></tr>`;
+            }).join('');
+
+            mainView.innerHTML = `
+                <div id="spectrum-details">
+                    <h2>${antibiotic.name}</h2>
+                    <div class="notes"><strong>Note e Spettro Riassuntivo:</strong><p>${antibiotic.notes}</p></div>
+                    ${getExplanationHtml()}
+                    <h3>Tabella di Copertura Dettagliata</h3>
+                    <table id="spectrum-table">
+                        <thead><tr><th>Gruppo Batterico</th><th>Copertura</th></tr></thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+                    ${getDisclaimerHtml()}
+                </div>`;
+        }
+
+        // --- GESTIONE EVENTI ---
+        sidebar.addEventListener('click', e => {
+            if (e.target.classList.contains('antibiotic-item')) {
+                document.querySelectorAll('.antibiotic-item.active').forEach(item => item.classList.remove('active'));
+                e.target.classList.add('active');
+                displaySpectrum(e.target.dataset.classIndex, e.target.dataset.antibioticIndex);
+            }
+            const classHeader = e.target.closest('.antibiotic-class h2');
+            if (classHeader) {
+                 classHeader.parentElement.classList.toggle('open');
+            }
+        });
+        
+        summaryBtn.addEventListener('click', () => {
+            isSummaryViewVisible = !isSummaryViewVisible;
+            if (isSummaryViewVisible) {
+                renderSummaryTable();
+                summaryBtn.textContent = 'Torna alla Vista Dettagliata';
+                mainContent.classList.add('sidebar-hidden');
+            } else {
+                showWelcomeMessage();
+                summaryBtn.textContent = 'Mostra Riepilogo Generale';
+                mainContent.classList.remove('sidebar-hidden');
+                document.querySelectorAll('.antibiotic-item.active').forEach(item => item.classList.remove('active'));
+            }
+        });
+
+        mainView.addEventListener('click', e => {
+            if (e.target.classList.contains('antibiotic-summary-link')) {
+                const { classIndex, antibioticIndex } = e.target.dataset;
+                summaryBtn.click(); // Torna alla vista dettagliata
+                
+                const classDiv = sidebar.querySelector(`.antibiotic-class[data-class-index="${classIndex}"]`);
+                if(classDiv && !classDiv.classList.contains('open')) classDiv.classList.add('open');
+                
+                const antibioticItem = sidebar.querySelector(`.antibiotic-item[data-class-index="${classIndex}"][data-antibiotic-index="${antibioticIndex}"]`);
+                if (antibioticItem) {
+                    // Timeout per dare tempo alla UI di aggiornarsi prima dello scroll
+                    setTimeout(() => {
+                        antibioticItem.click();
+                        antibioticItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 50);
+                }
+            }
+        });
+
+        // --- INIZIALIZZAZIONE ---
+        renderSidebar();
+        showWelcomeMessage();
+    });
+    </script>
+</body>
+</html>
